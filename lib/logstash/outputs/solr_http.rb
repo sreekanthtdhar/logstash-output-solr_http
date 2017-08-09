@@ -41,6 +41,7 @@ class LogStash::Outputs::SolrHTTP < LogStash::Outputs::Base
 
   public
   def register
+    #Install rsolr 1.1.2 version manually
     require "rsolr"
     @solr = RSolr.connect :url => @solr_url
     buffer_initialize(
@@ -62,7 +63,8 @@ class LogStash::Outputs::SolrHTTP < LogStash::Outputs::Base
 
     events.each do |event|
         document = event.to_hash()
-        document["@timestamp"] = document["@timestamp"].iso8601 #make the timestamp ISO
+	#Commented iso conversion
+        document["@timestamp"] = document["@timestamp"]#.iso8601 #make the timestamp ISO
         if @document_id.nil?
           document ["id"] = UUIDTools::UUID.random_create    #add a unique ID
         else
@@ -70,8 +72,9 @@ class LogStash::Outputs::SolrHTTP < LogStash::Outputs::Base
         end
         documents.push(document)
     end
-
-    @solr.add(documents)
+	
+    #updated solr.add to commit the docs
+    @solr.add(documents, :add_attributes => {:commitWithin=>1000})
     rescue Exception => e
       @logger.warn("An error occurred while indexing: #{e.message}")
   end #def flush
